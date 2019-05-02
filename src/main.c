@@ -6,7 +6,7 @@
 /*   By: ysan-seb <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 16:19:02 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/02 17:00:04 by ysan-seb         ###   ########.fr       */
+/*   Updated: 2019/05/02 17:32:33 by ysan-seb         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,6 +74,7 @@ int				main(int ac, char **av)
 		return (1);
 	if (!ft_strlen(av[0]) || av[1] || opt.h)
 		return (usage("ft_ping"));
-	ft_ping(av[0]);
+	if (ft_ping(av[0]) < 0)
+		return (-1);
 	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: ysan-seb <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 17:09:39 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/02 16:20:03 by ysan-seb         ###   ########.fr       */
+/*   Updated: 2019/05/02 19:13:43 by ysan-seb         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,10 @@
 
 # include "libft.h"
 # include <stdio.h>
+# include <arpa/inet.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netdb.h>
 
 typedef struct		s_opt
 {
