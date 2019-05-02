@@ -6,7 +6,7 @@
 /*   By: ysan-seb <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/02 16:18:58 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/02 20:12:37 by ysan-seb         ###   ########.fr       */
+/*   Updated: 2019/05/02 20:55:36 by ysan-seb         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ static struct addrinfo		init_hints(void)
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_RAW;
+	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_protocol = 0;
 	hints.ai_canonname = NULL;
@@ -60,10 +60,13 @@ int							ft_ping(char *host)
 	hints = init_hints();
 	if ((ecode = getaddrinfo(host, 0, &hints, &res) != 0))
 		return (ft_gai_sterror(ecode));
-	if ((sock = socket(PF_INET, SOCK_RAW, 0)) < 0)
+	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0)
 	{
 		dprintf(2, "ft_ping: Error in connection.\n");
 		return (-1);
 	}
+	printf("ft_ping: connected.\n");
+	//printf("PING %s (%%ip): 56 data bytes\n", host);
+	//printf("64 bytes from %%ip: icmp_seq=%d ttl=%d time=%d ms\n", 0, 0, 0);
 	return (0);
 }
