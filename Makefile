@@ -6,7 +6,7 @@
 #    By: maki <maki@student.42.fr>                  +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/04/23 22:00:58 by ysan-seb          #+#    #+#              #
-#    Updated: 2019/05/01 17:09:13 by ysan-seb         ###   ########.fr        #
+#    Updated: 2019/05/02 16:20:48 by ysan-seb         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,9 +14,10 @@ NAME = ft_ping
 
 SRC_PATH = ./src/
 
-SRCS = $(SRC_PATH)main.c \
+SRCS =	$(SRC_PATH)main.c \
+		$(SRC_PATH)ft_ping.c \
 
-OBJS = $(SRCS:.c=.o)
+OBJS =	$(SRCS:.c=.o)
 
 CC = gcc
 
