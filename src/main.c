@@ -69,10 +69,10 @@ int				main(int ac, char **av)
 
 	if (ac < 2)
 		return (usage("ft_ping"));
-	ft_memset(&opt, 0, sizeof(opt));
+	memset(&opt, 0, sizeof(opt));
 	if (!(av = get_options(av, &opt)))
 		return (1);
-	if (!ft_strlen(av[0]) || av[1] || opt.h)
+	if (!strlen(av[0]) || av[1] || opt.h)
 		return (usage("ft_ping"));
 	if (ft_ping(av[0]) < 0)
 		return (-1);
