@@ -15,7 +15,7 @@ NAME = ft_ping
 SRC_PATH = ./src/
 
 SRCS =	$(SRC_PATH)main.c \
-		$(SRC_PATH)ft_ping.c \
+	$(SRC_PATH)ft_ping.c \
 
 OBJS =	$(SRCS:.c=.o)
 
@@ -25,27 +25,27 @@ FLAGS = -Wall -Wextra -Werror
 
 HEADER = -I./inc
 
-LIBFT = libft/libft.a
+#LIBFT = libft/libft.a
 
 RM = rm -rf
 
 all	: lib $(NAME)
 
 lib	:
-	@make -C libft/
+	#@make -C libft/
 
 $(NAME):$(OBJS)
-	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) $(LIBFT)
+	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) #$(LIBFT)
 
 %.o: %.c ./inc/libft.h ./inc/libftprintf.h
 	gcc $(FLAGS) -o $@ -c  $< $(HEADER)
 
 clean	:
-	@make -C libft/ clean
+	#@make -C libft/ clean
 	$(RM) $(OBJS)
 
 fclean: clean
-	@make -C libft/ fclean
+	#@make -C libft/ fclean
 	$(RM) $(NAME)
 
 re	:	fclean

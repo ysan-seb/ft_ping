@@ -12,31 +12,8 @@
 
 #include "ft_ping.h"
 
-	//printf("PING %s (%%ip): 56 data bytes\n", host);
-	//printf("64 bytes from %%ip: icmp_seq=%d ttl=%d time=%d ms\n", 0, 0, 0);
-
-static int					ft_gai_sterror(int ecode)
-{
-	static char *emsg[] = {
-		[EAI_AGAIN] = "temporary failure in name resolution",
-		[EAI_BADFLAGS] = "invalid value for ai_flags",
-		[EAI_FAIL] = "non-recoverable failure in name resolution",
-		[EAI_FAMILY] = "ai_family not supported",
-		[EAI_ADDRFAMILY] = "address family for hostname not supported",
-		[EAI_MEMORY] = "memory allocation failure",
-		[EAI_NODATA] = "no address associated with hostname",
-		[EAI_NONAME] = "hostname nor servname provided, or not known",
-		[EAI_SERVICE] = "servname not supported for ai_socktype",
-		[EAI_SOCKTYPE] = "ai_socktype not supported",
-		[EAI_SYSTEM] = "system error returned in errno",
-		[EAI_BADHINTS] = "invalid value for hints",
-		[EAI_PROTOCOL] = "resolved protocol is unknown",
-		[EAI_OVERFLOW] = "argument buffer overflow",
-	};
-
-	dprintf(2, "ft_ping: %s\n", emsg[ecode]);
-	return (-1);
-}
+//printf("PING %s (%%ip): 56 data bytes\n", host);
+//printf("64 bytes from %%ip: icmp_seq=%d ttl=%d time=%d ms\n", 0, 0, 0);
 
 static struct addrinfo		init_hints(void)
 {
@@ -55,16 +32,15 @@ static struct addrinfo		init_hints(void)
 
 int							ft_ping(char *host)
 {
-	int				ecode;
 	struct addrinfo	hints;
 	struct addrinfo	*res;
 
 	int				sock;
-	ssize_t				size;
+	ssize_t			size;
 
 	hints = init_hints();
-	if ((ecode = getaddrinfo(host, 0, &hints, &res) != 0))
-		return (ft_gai_sterror(ecode));
+	if (getaddrinfo(host, 0, &hints, &res) != 0)
+		return (-1);
 	while (1)
 	{
 		if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
@@ -72,6 +48,7 @@ int							ft_ping(char *host)
 			dprintf(2, "ft_ping: socket error.\n");
 			return (-1);
 		}
+		//sock opt
 		if ((size = sendto(sock, NULL, 0, 0, 0, 0)) < 0)
 		{
 			dprintf(2, "ft_ping: sendto error.\n");
