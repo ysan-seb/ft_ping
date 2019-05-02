@@ -12,14 +12,17 @@
 
 #include "ft_ping.h"
 
+	//printf("PING %s (%%ip): 56 data bytes\n", host);
+	//printf("64 bytes from %%ip: icmp_seq=%d ttl=%d time=%d ms\n", 0, 0, 0);
+
 static int					ft_gai_sterror(int ecode)
 {
 	static char *emsg[] = {
-		[EAI_ADDRFAMILY] = "address family for hostname not supported",
 		[EAI_AGAIN] = "temporary failure in name resolution",
 		[EAI_BADFLAGS] = "invalid value for ai_flags",
 		[EAI_FAIL] = "non-recoverable failure in name resolution",
 		[EAI_FAMILY] = "ai_family not supported",
+		[EAI_ADDRFAMILY] = "address family for hostname not supported",
 		[EAI_MEMORY] = "memory allocation failure",
 		[EAI_NODATA] = "no address associated with hostname",
 		[EAI_NONAME] = "hostname nor servname provided, or not known",
@@ -55,18 +58,31 @@ int							ft_ping(char *host)
 	int				ecode;
 	struct addrinfo	hints;
 	struct addrinfo	*res;
+
 	int				sock;
+	ssize_t				size;
 
 	hints = init_hints();
 	if ((ecode = getaddrinfo(host, 0, &hints, &res) != 0))
 		return (ft_gai_sterror(ecode));
-	if ((sock = socket(PF_INET, SOCK_STREAM, 0)) < 0)
+	while (1)
 	{
-		dprintf(2, "ft_ping: Error in connection.\n");
-		return (-1);
+		if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+		{
+			dprintf(2, "ft_ping: socket error.\n");
+			return (-1);
+		}
+		if ((size = sendto(sock, NULL, 0, 0, 0, 0)) < 0)
+		{
+			dprintf(2, "ft_ping: sendto error.\n");
+			return (-1);
+		}
+		if ((size = recvmsg(sock, NULL, 0)) < 0)
+		{
+			dprintf(2, "ft_ping: recvmsg error.\n");
+			return (-1);
+		}
+		close (sock);
 	}
-	printf("ft_ping: connected.\n");
-	//printf("PING %s (%%ip): 56 data bytes\n", host);
-	//printf("64 bytes from %%ip: icmp_seq=%d ttl=%d time=%d ms\n", 0, 0, 0);
 	return (0);
 }
