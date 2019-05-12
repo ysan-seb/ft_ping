@@ -22,44 +22,52 @@ static struct addrinfo		init_hints(void)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_protocol = 0;
-	hints.ai_canonname = NULL;
-	hints.ai_addr = NULL;
-	hints.ai_next = NULL;
 	return (hints);
 }
 
 int							ft_ping(char *host)
 {
-	struct addrinfo	hints;
-	struct addrinfo	*res;
-
-	int				sock;
-	ssize_t			size;
-
+	struct addrinfo		hints;
+	struct addrinfo		*res;
+	struct addrinfo		*p;
+	struct sockaddr_in	*tmp;
+	void				*addr;
+	char				_host[64];
+	int					_status;
+	int					sock;
+	memset(&_host, 0, 64);
 	hints = init_hints();
-	if (getaddrinfo(host, 0, &hints, &res) != 0)
-		return (-1);
-	while (1)
+	if ((_status = getaddrinfo(host, 0, &hints, &res)) != 0)
 	{
-		if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
-		{
-			dprintf(2, "ft_ping: socket error.\n");
-			return (-1);
-		}
-		//sock opt
-		if ((size = sendto(sock, NULL, 0, 0, 0, 0)) < 0)
-		{
-			dprintf(2, "ft_ping: sendto error.\n");
-			return (-1);
-		}
-		if ((size = recvmsg(sock, NULL, 0)) < 0)
-		{
-			dprintf(2, "ft_ping: recvmsg error.\n");
-			return (-1);
-		}
-		close (sock);
+		dprintf(2, "[\e[38;5;160m-\e[0m] Getaddrinfo failed.\n");
+		return (-1);
 	}
+	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
+	p = res;
+	while (p != NULL)
+	{
+		if (p->ai_family == AF_INET)
+		{
+			tmp = (struct sockaddr_in *)p->ai_addr;
+			addr = &(tmp->sin_addr);
+		}
+		p = p->ai_next;
+	}
+	inet_ntop(AF_INET, addr, _host, sizeof(_host));
+	if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+	{
+		dprintf(2, "[\e[38;5;160m-\e[0m] Socket error.\n");
+		return (-1);
+	}
+	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
+	freeaddrinfo(res);
+	printf("host: %s -> %s\n", host, _host);
+	if ((_status = sendto(sock, "aaaa", 4, 0, (struct sockaddr*)tmp, tmp->sin_addrlen)) < 0)
+	{
+		perror("sendto");
+		dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
+		return (-1);
+	}
+	printf("[\e[38;5;82m+\e[0m] Sendto success.\n");
 	return (0);
 }
