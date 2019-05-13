@@ -74,7 +74,7 @@ int				main(int ac, char **av)
 		return (1);
 	if (!strlen(av[0]) || av[1] || opt.h)
 		return (usage("ft_ping"));
-	if (ft_ping(av[0]) < 0)
+	if (ping(av[0]) < 0)
 		return (-1);
 	return (0);
 }

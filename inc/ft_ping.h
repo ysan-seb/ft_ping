@@ -22,12 +22,33 @@
 # include <netinet/ip_icmp.h>
 # include <netdb.h>
 
-typedef struct		s_opt
-{
-	int				h;
-	int				v;
-}					t_opt;
+# define FALSE	0
+# define TRUE	1
 
-int					ft_ping(char *host);
+typedef struct			s_opt
+{
+	int					h;
+	int					v;
+}						t_opt;
+
+
+typedef struct			s_icmp_packet
+{
+	struct icmp			icmp_header;
+}						t_icmp_packet;
+
+typedef struct			s_ping
+{
+	int					do_ping;
+	int					sockfd;
+	struct sockaddr_in	to;
+	char				ipv4[16];
+	struct icmp			packet;
+}						t_ping;
+
+
+t_ping					g_ping;
+
+int						ping(char *_host);
 
 #endif

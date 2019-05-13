@@ -15,13 +15,13 @@ NAME = ft_ping
 SRC_PATH = ./src/
 
 SRCS =	$(SRC_PATH)main.c \
-	$(SRC_PATH)ft_ping.c \
+		$(SRC_PATH)ping.c \
 
 OBJS =	$(SRCS:.c=.o)
 
 CC = gcc
 
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -g3 -fsanitize=address -Wall -Wextra -Werror
 
 HEADER = -I./inc
 

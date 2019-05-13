@@ -35,6 +35,7 @@ int							ft_ping(char *host)
 	char				_host[64];
 	int					_status;
 	int					sock;
+
 	memset(&_host, 0, 64);
 	hints = init_hints();
 	if ((_status = getaddrinfo(host, 0, &hints, &res)) != 0)
@@ -62,12 +63,50 @@ int							ft_ping(char *host)
 	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	freeaddrinfo(res);
 	printf("host: %s -> %s\n", host, _host);
-	if ((_status = sendto(sock, "aaaa", 4, 0, (struct sockaddr*)tmp, tmp->sin_addrlen)) < 0)
+
+	struct sockaddr_in	to;
+
+	to.sin_family = AF_INET;
+	to.sin_addr.s_addr = inet_addr(_host);
+
+	// icmp_packet
+
+	if ((_status = sendto(sock, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 64, 0, (struct sockaddr*)&to, sizeof(to))) < 0)
 	{
 		perror("sendto");
 		dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
 		return (-1);
 	}
-	printf("[\e[38;5;82m+\e[0m] Sendto success.\n");
+	printf("[\e[38;5;82m+\e[0m] Sendto success (%d bytes send).\n", _status);
+
+	char buffer[548];
+	struct sockaddr_storage src_addr;
+
+	struct iovec iov[1];
+	iov[0].iov_base=buffer;
+	iov[0].iov_len=sizeof(buffer);
+
+	struct msghdr message;
+	message.msg_name=&src_addr;
+	message.msg_namelen=sizeof(src_addr);
+	message.msg_iov=iov;
+	message.msg_iovlen=1;
+	message.msg_control=0;
+	message.msg_controllen=0;
+
+	int on = 1;
+
+	setsockopt(sock, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on));
+
+	int ttl = 1; /* max = 255 */
+	setsockopt(sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+
+
+	if ((_status = recvmsg(sock, &message, 0)) < 0)
+	{
+		perror("recvmsg");
+		return (-1);
+	}
+	printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 	return (0);
 }
