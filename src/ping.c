@@ -64,6 +64,12 @@ void						create_icmp_packet(void)
 	g_ping.packet.icmp_cksum = eval_checksum((unsigned short *)&g_ping.packet, sizeof(g_ping.packet));
 }
 
+
+struct buffer {
+	struct iphdr	ip;
+	struct icmphdr	icmp;
+};
+
 void						sighandler(int sig)
 {
 	int		_status;
@@ -77,11 +83,12 @@ void						sighandler(int sig)
 			return ;
 		}
 		printf("[\e[38;5;82m+\e[0m] Sendto success (%d bytes send).\n", _status);
-		char buffer[548];
+//		char buffer[548];
+		struct buffer buffer;	
 		struct sockaddr_storage src_addr;
 
 		struct iovec iov[1];
-		iov[0].iov_base=buffer;
+		iov[0].iov_base=&buffer;
 		iov[0].iov_len=sizeof(buffer);
 
 		struct msghdr message;
@@ -96,9 +103,17 @@ void						sighandler(int sig)
 			perror("recvmsg");
 			return ;
 		}
+		printf("%d\n", buffer.ip.protocol);
+		printf("%d\n", buffer.icmp.type);
+/*
+		struct icmp *check;
+
+		check = (struct icmp*)&message.msg_iov[0].iov_base;
+		printf("%d %d\n", check->icmp_type, check->icmp_code);
 		printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 		//	g_ping.iseq++;
 		//printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%f ms\n", _status, g_ping.ipv4, g_ping.iseq, g_ping.ttl, 0.0);
+*/
 		alarm(1);
 	}
 	else if (sig == SIGINT)
