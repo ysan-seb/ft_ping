@@ -98,7 +98,7 @@ void						sighandler(int sig)
 		}
 		printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 		//	g_ping.iseq++;
-		//	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%f ms\n", 0, g_ping.ipv4, g_ping.iseq, g_ping.ttl, 0.0);
+		//printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%f ms\n", _status, g_ping.ipv4, g_ping.iseq, g_ping.ttl, 0.0);
 		alarm(1);
 	}
 	else if (sig == SIGINT)
@@ -134,6 +134,7 @@ int							ping(char *_node)
 	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
+	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
 	alarm(1);
 	signal(SIGALRM, sighandler);
 	signal(SIGINT, sighandler);
