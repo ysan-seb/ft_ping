@@ -21,6 +21,7 @@
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
 # include <netdb.h>
+# include <sys/time.h>
 
 # define FALSE	0
 # define TRUE	1
@@ -44,6 +45,7 @@ typedef struct			s_ping
 	struct sockaddr_in	to;
 	char				ipv4[16];
 	struct icmp			packet;
+	int					iseq;
 }						t_ping;
 
 

@@ -35,23 +35,23 @@ static void					*get_target(struct addrinfo *_res)
 	return (NULL);
 }
 
-unsigned short eval_checksum(unsigned short *data, int size)
+unsigned short eval_checksum(unsigned short *_data, int _size)
 {
-	unsigned long checksum = 0;
+	unsigned long _checksum = 0;
 
-	while (size > 1)
+	while (_size > 1)
 	{
-		checksum = checksum+*data++;
-		size = size - sizeof(unsigned short);
+		_checksum = _checksum+*_data++;
+		_size = _size - sizeof(unsigned short);
 	}
 
-	if (size)
-		checksum = checksum + *(unsigned char *)data;
+	if (_size)
+		_checksum = _checksum + *(unsigned char *)_data;
 
-	checksum = (checksum >> 16) + (checksum & 0xffff);
-	checksum = checksum + (checksum >> 16);
+	_checksum = (_checksum >> 16) + (_checksum & 0xffff);
+	_checksum = _checksum + (_checksum >> 16);
 
-	return (unsigned short)(~checksum);
+	return (unsigned short)(~_checksum);
 }
 
 void						create_icmp_packet(void)
@@ -82,8 +82,16 @@ void						sighandler(int sig)
 			dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
 			return ;
 		}
-		printf("[\e[38;5;82m+\e[0m] Sendto success (%d bytes send).\n", _status);
-//		char buffer[548];
+
+		struct timeval _before;
+		memset(&_before, 0, sizeof(_before));
+		gettimeofday(&_before, NULL);
+
+		//printf("[\e[38;5;82m+\e[0m] Sendto success (%d bytes send).\n", _status);
+		//		char buffer[548];
+
+		_status = 0;
+		//
 		struct buffer buffer;	
 		struct sockaddr_storage src_addr;
 
@@ -103,17 +111,21 @@ void						sighandler(int sig)
 			perror("recvmsg");
 			return ;
 		}
-		printf("%d\n", buffer.ip.protocol);
-		printf("%d\n", buffer.icmp.type);
-/*
-		struct icmp *check;
 
-		check = (struct icmp*)&message.msg_iov[0].iov_base;
-		printf("%d %d\n", check->icmp_type, check->icmp_code);
-		printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
-		//	g_ping.iseq++;
-		//printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%f ms\n", _status, g_ping.ipv4, g_ping.iseq, g_ping.ttl, 0.0);
-*/
+		struct timeval _after;
+		memset(&_after, 0, sizeof(_after));
+		gettimeofday(&_after, NULL);
+		
+		double time;
+
+		time = ((_after.tv_sec - _before.tv_sec) * 1000.0) + ((_after.tv_usec - _before.tv_usec) / 1000.0);
+		//printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
+		g_ping.iseq++;
+
+		if (time < 1.0)
+			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+		else
+			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
 		alarm(1);
 	}
 	else if (sig == SIGINT)
@@ -123,7 +135,7 @@ void						sighandler(int sig)
 	}
 	else if (sig == SIGQUIT)
 	{
-		printf("\rtoto\n");
+		printf("\r0/%d packets, 0%% loss, min/avg/ewma/max = 0.0/0.0/0.0/0.0 ms\n", g_ping.iseq);
 	}
 }
 
