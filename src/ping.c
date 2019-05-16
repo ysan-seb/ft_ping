@@ -76,13 +76,14 @@ void						sighandler(int sig)
 
 	if (sig == SIGALRM)
 	{
+		alarm(1);
 		create_icmp_packet();
 		if ((_status = sendto(g_ping.sockfd, &g_ping.packet, sizeof(g_ping.packet), 0, (struct sockaddr *)&g_ping.to, sizeof(g_ping.to))) < 0)
 		{
 			dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
 			return ;
 		}
-
+		g_ping.spack++;
 		struct timeval _before;
 		memset(&_before, 0, sizeof(_before));
 		gettimeofday(&_before, NULL);
@@ -111,7 +112,6 @@ void						sighandler(int sig)
 			perror("recvmsg");
 			return ;
 		}
-
 		struct timeval _after;
 		memset(&_after, 0, sizeof(_after));
 		gettimeofday(&_after, NULL);
@@ -121,12 +121,16 @@ void						sighandler(int sig)
 		time = ((_after.tv_sec - _before.tv_sec) * 1000.0) + ((_after.tv_usec - _before.tv_usec) / 1000.0);
 		//printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 		g_ping.iseq++;
-
-		if (time < 1.0)
-			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+		if (buffer.icmp.type != 0 && buffer.icmp.code != 0)
+			printf("From %s: icmp_seq=%d type: %d code: %d\n", g_ping.ipv4, g_ping.iseq, buffer.icmp.type, buffer.icmp.code);
 		else
-			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
-		alarm(1);
+		{
+			g_ping.rpack++;
+			if (time < 1.0)
+				printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+			else
+				printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+		}
 	}
 	else if (sig == SIGINT)
 	{
@@ -135,7 +139,9 @@ void						sighandler(int sig)
 	}
 	else if (sig == SIGQUIT)
 	{
-		printf("\r0/%d packets, 0%% loss, min/avg/ewma/max = 0.0/0.0/0.0/0.0 ms\n", g_ping.iseq);
+		int percent;
+		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
+		printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = 0.0/0.0/0.0/0.0 ms\n", g_ping.rpack, g_ping.spack, percent);
 	}
 }
 
@@ -161,6 +167,9 @@ int							ping(char *_node)
 	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
+	//struct timeval tv;
+	//tv.tv_sec = 1;
+	//setsockopt(g_ping.sockfd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
 	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
 	alarm(1);
 	signal(SIGALRM, sighandler);

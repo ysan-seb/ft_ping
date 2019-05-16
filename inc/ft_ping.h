@@ -46,6 +46,8 @@ typedef struct			s_ping
 	char				ipv4[16];
 	struct icmp			packet;
 	int					iseq;
+	int					spack;
+	int					rpack;
 }						t_ping;
 
 
