@@ -70,6 +70,20 @@ struct buffer {
 	struct icmphdr	icmp;
 };
 
+void						get_rtt(float time)
+{
+	g_ping.rtt.tt += time;
+	if (g_ping.rtt.min == 0.0)
+		g_ping.rtt.min = time;
+	if (g_ping.rtt.max == 0.0)
+		g_ping.rtt.max = time;
+	if (time < g_ping.rtt.min)
+		g_ping.rtt.min = time;
+	if (time > g_ping.rtt.max)
+		g_ping.rtt.max = time;
+	g_ping.rtt.avg = g_ping.rtt.tt / (float)g_ping.iseq;
+}
+
 void						sighandler(int sig)
 {
 	int		_status;
@@ -121,27 +135,31 @@ void						sighandler(int sig)
 		time = ((_after.tv_sec - _before.tv_sec) * 1000.0) + ((_after.tv_usec - _before.tv_usec) / 1000.0);
 		//printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 		g_ping.iseq++;
+		get_rtt(time);
 		if (buffer.icmp.type != 0 && buffer.icmp.code != 0)
 			printf("From %s: icmp_seq=%d type: %d code: %d\n", g_ping.ipv4, g_ping.iseq, buffer.icmp.type, buffer.icmp.code);
 		else
 		{
 			g_ping.rpack++;
-			if (time < 1.0)
+			//if (time < 1.0)
+			//	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+			//else
 				printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
-			else
-				printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.2f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
 		}
 	}
 	else if (sig == SIGINT)
 	{
+		int percent;
+		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
 		g_ping.do_ping = FALSE;
-		printf("\r--- ping statistics ---\n");
+		printf("\r--- %s ping statistics ---\n", g_ping.node);
+		printf("\r%d/%d packets, %d%% loss, min/avg/max/mdev = %.3f/%.3f/%.3f/0.0 ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
 	}
 	else if (sig == SIGQUIT)
 	{
 		int percent;
 		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
-		printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = 0.0/0.0/0.0/0.0 ms\n", g_ping.rpack, g_ping.spack, percent);
+		printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = %.3f/%.3f/0.0/%.3f ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
 	}
 }
 
@@ -154,17 +172,18 @@ int							ping(char *_node)
 
 	memset(&g_ping, 0, sizeof(g_ping));
 	g_ping.do_ping = TRUE;
+	g_ping.node = _node;
 	_hints = init_hints();
 	if ((_status = getaddrinfo(_node, 0, &_hints, &_res)) != 0)
 		return (error("[\e[38;5;160m-\e[0m] Getaddrinfo failed."));
-	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
+//	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
 	if (!(_src = get_target(_res)))
 		return (error("[\e[38;5;160m-\e[0m] get_target failed."));
 	inet_ntop(AF_INET, _src, g_ping.ipv4, sizeof(g_ping.ipv4));
-	printf("target: %s -> %s\n", _node, g_ping.ipv4);
+//	printf("target: %s -> %s\n", _node, g_ping.ipv4);
 	if ((g_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		return (error("[\e[38;5;160m-\e[0m] Socket error.\n"));
-	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
+//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
 	//struct timeval tv;

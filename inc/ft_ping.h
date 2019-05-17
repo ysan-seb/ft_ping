@@ -32,14 +32,18 @@ typedef struct			s_opt
 	int					v;
 }						t_opt;
 
-
-typedef struct			s_icmp_packet
+typedef struct			s_rtt
 {
-	struct icmp			icmp_header;
-}						t_icmp_packet;
+	float				tt;
+	float				min;
+	float				avg;
+	float				max;
+	float				mdev;
+}						t_rtt;
 
 typedef struct			s_ping
 {
+	char				*node;
 	int					do_ping;
 	int					sockfd;
 	struct sockaddr_in	to;
@@ -48,6 +52,7 @@ typedef struct			s_ping
 	int					iseq;
 	int					spack;
 	int					rpack;
+	t_rtt				rtt;
 }						t_ping;
 
 
