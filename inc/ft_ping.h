@@ -53,6 +53,8 @@ typedef struct			s_ping
 	int					spack;
 	int					rpack;
 	t_rtt				rtt;
+	struct timeval		pstart;
+	struct timeval		pend;
 }						t_ping;
 
 

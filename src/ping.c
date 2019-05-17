@@ -87,6 +87,7 @@ void						get_rtt(float time)
 void						sighandler(int sig)
 {
 	int		_status;
+	double	tend;
 
 	if (sig == SIGALRM)
 	{
@@ -129,7 +130,7 @@ void						sighandler(int sig)
 		struct timeval _after;
 		memset(&_after, 0, sizeof(_after));
 		gettimeofday(&_after, NULL);
-		
+
 		double time;
 
 		time = ((_after.tv_sec - _before.tv_sec) * 1000.0) + ((_after.tv_usec - _before.tv_usec) / 1000.0);
@@ -144,15 +145,18 @@ void						sighandler(int sig)
 			//if (time < 1.0)
 			//	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
 			//else
-				printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
 		}
 	}
 	else if (sig == SIGINT)
 	{
+		gettimeofday(&g_ping.pend, NULL);
+		tend = ((g_ping.pend.tv_sec - g_ping.pstart.tv_sec) * 1000.0) + ((g_ping.pend.tv_usec - g_ping.pstart.tv_usec) / 1000.0);
 		int percent;
 		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
 		g_ping.do_ping = FALSE;
 		printf("\r--- %s ping statistics ---\n", g_ping.node);
+		printf("%d packets transmitted, %d received, %d%% packet loss, time %dms\n", g_ping.spack, g_ping.rpack, percent, (int)tend);
 		printf("\r%d/%d packets, %d%% loss, min/avg/max/mdev = %.3f/%.3f/%.3f/0.0 ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
 	}
 	else if (sig == SIGQUIT)
@@ -169,21 +173,21 @@ int							ping(char *_node)
 	struct addrinfo			_hints;
 	struct addrinfo			*_res;
 	void					*_src;
-
 	memset(&g_ping, 0, sizeof(g_ping));
+	gettimeofday(&g_ping.pstart, NULL);
 	g_ping.do_ping = TRUE;
 	g_ping.node = _node;
 	_hints = init_hints();
 	if ((_status = getaddrinfo(_node, 0, &_hints, &_res)) != 0)
 		return (error("[\e[38;5;160m-\e[0m] Getaddrinfo failed."));
-//	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
+	//	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
 	if (!(_src = get_target(_res)))
 		return (error("[\e[38;5;160m-\e[0m] get_target failed."));
 	inet_ntop(AF_INET, _src, g_ping.ipv4, sizeof(g_ping.ipv4));
-//	printf("target: %s -> %s\n", _node, g_ping.ipv4);
+	//	printf("target: %s -> %s\n", _node, g_ping.ipv4);
 	if ((g_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		return (error("[\e[38;5;160m-\e[0m] Socket error.\n"));
-//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
+	//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
 	//struct timeval tv;
