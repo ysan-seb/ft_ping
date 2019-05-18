@@ -91,13 +91,13 @@ void						sighandler(int sig)
 
 	if (sig == SIGALRM)
 	{
-		alarm(1);
 		create_icmp_packet();
 		if ((_status = sendto(g_ping.sockfd, &g_ping.packet, sizeof(g_ping.packet), 0, (struct sockaddr *)&g_ping.to, sizeof(g_ping.to))) < 0)
 		{
 			dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
 			return ;
 		}
+		alarm(1);
 		g_ping.spack++;
 		struct timeval _before;
 		memset(&_before, 0, sizeof(_before));
@@ -124,7 +124,7 @@ void						sighandler(int sig)
 		message.msg_controllen=0;
 		if ((_status = recvmsg(g_ping.sockfd, &message, 0)) < 0)
 		{
-			perror("recvmsg");
+			// perror("recvmsg");
 			return ;
 		}
 		struct timeval _after;
@@ -157,13 +157,17 @@ void						sighandler(int sig)
 		g_ping.do_ping = FALSE;
 		printf("\r--- %s ping statistics ---\n", g_ping.node);
 		printf("%d packets transmitted, %d received, %d%% packet loss, time %dms\n", g_ping.spack, g_ping.rpack, percent, (int)tend);
-		printf("\r%d/%d packets, %d%% loss, min/avg/max/mdev = %.3f/%.3f/%.3f/0.0 ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
+		if (g_ping.rpack > 0)
+			printf("\r%d/%d packets, %d%% loss, min/avg/max/mdev = %.3f/%.3f/%.3f/0.0 ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
 	}
 	else if (sig == SIGQUIT)
 	{
 		int percent;
 		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
-		printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = %.3f/%.3f/0.0/%.3f ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
+		if (g_ping.rpack > 0)
+			printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = %.3f/%.3f/0.0/%.3f ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
+		else
+			printf("\r%d/%d packets, %d%% loss\n", g_ping.spack, g_ping.rpack, percent);
 	}
 }
 
@@ -190,9 +194,9 @@ int							ping(char *_node)
 	//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
-	//struct timeval tv;
-	//tv.tv_sec = 1;
-	//setsockopt(g_ping.sockfd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
+	struct timeval tv;
+	tv.tv_sec = 1;
+	setsockopt(g_ping.sockfd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
 	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
 	alarm(1);
 	signal(SIGALRM, sighandler);
