@@ -6,7 +6,7 @@
 /*   By: maki <maki@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 16:19:02 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/19 11:47:33 by maki             ###   ########.fr       */
+/*   Updated: 2019/05/19 22:51:32 by maki             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,7 @@ int				main(int ac, char **av)
 		return (1);
 	if (!strlen(av[0]) || av[1] || opt.h)
 		return (usage("ft_ping"));
-	if (ping(av[0]) < 0)
+	if (ping(av[0], opt) < 0)
 		return (-1);
 	return (0);
 }

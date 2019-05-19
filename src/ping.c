@@ -137,11 +137,11 @@ void						sighandler(int sig)
 		//printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
 		g_ping.iseq++;
 		get_rtt(time);
-		if (buffer.icmp.type != 0 && buffer.icmp.code != 0)
+		g_ping.rpack++;
+		if (g_ping.verbose)
 			printf("From %s: icmp_seq=%d type: %d code: %d\n", g_ping.ipv4, g_ping.iseq, buffer.icmp.type, buffer.icmp.code);
 		else
 		{
-			g_ping.rpack++;
 			//if (time < 1.0)
 			//	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
 			//else
@@ -171,7 +171,7 @@ void						sighandler(int sig)
 	}
 }
 
-int							ping(char *_node)
+int							ping(char *_node, t_opt opt)
 {
 	int						_status;
 	struct addrinfo			_hints;
@@ -192,6 +192,7 @@ int							ping(char *_node)
 	if ((g_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
 		return (error("[\e[38;5;160m-\e[0m] Socket error.\n"));
 	//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
+	g_ping.verbose = (opt.v) ? 1 : 0;
 	g_ping.to.sin_family = AF_INET;
 	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
 	struct timeval tv;
@@ -200,10 +201,10 @@ int							ping(char *_node)
 // 	int ttl = 60; /* max = 255 */
 // setsockopt(g_ping.sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
-	alarm(1);
 	signal(SIGALRM, sighandler);
 	signal(SIGINT, sighandler);
 	signal(SIGQUIT, sighandler);
+	alarm(1);
 	while (g_ping.do_ping)
 		;
 	freeaddrinfo(_res);

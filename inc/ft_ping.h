@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ft_ping.h                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ysan-seb <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: maki <maki@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 17:09:39 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/02 19:13:43 by ysan-seb         ###   ########.fr       */
+/*   Updated: 2019/05/19 22:52:29 by maki             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ typedef struct			s_rtt
 
 typedef struct			s_ping
 {
+	int					verbose;
 	char				*node;
 	int					do_ping;
 	int					sockfd;
@@ -60,6 +61,6 @@ typedef struct			s_ping
 
 t_ping					g_ping;
 
-int						ping(char *_host);
+int						ping(char *_host, t_opt opt);
 
 #endif
