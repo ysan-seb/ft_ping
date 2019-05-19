@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.c                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ysan-seb <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: maki <maki@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 16:19:02 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/02 17:32:33 by ysan-seb         ###   ########.fr       */
+/*   Updated: 2019/05/19 11:47:33 by maki             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,6 +69,11 @@ int				main(int ac, char **av)
 
 	if (ac < 2)
 		return (usage("ft_ping"));
+	if (getuid() != 0)
+	{
+		printf("ft_ping: permission denied\n");
+		return (0);
+	}
 	memset(&opt, 0, sizeof(opt));
 	if (!(av = get_options(av, &opt)))
 		return (1);

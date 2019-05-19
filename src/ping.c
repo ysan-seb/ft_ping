@@ -197,6 +197,8 @@ int							ping(char *_node)
 	struct timeval tv;
 	tv.tv_sec = 1;
 	setsockopt(g_ping.sockfd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
+// 	int ttl = 60; /* max = 255 */
+// setsockopt(g_ping.sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
 	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
 	alarm(1);
 	signal(SIGALRM, sighandler);
