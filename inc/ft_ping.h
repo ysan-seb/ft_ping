@@ -22,9 +22,23 @@
 # include <netinet/ip_icmp.h>
 # include <netdb.h>
 # include <sys/time.h>
+#include <signal.h>
 
 # define FALSE	0
 # define TRUE	1
+
+struct buffer {
+	struct iphdr	ip;
+	struct icmp		icmp;
+	char			b[16];
+
+};
+
+typedef struct			s_elem
+{
+	float				time;
+	struct s_elem		*next;
+}						t_elem;
 
 typedef struct			s_opt
 {
@@ -34,33 +48,53 @@ typedef struct			s_opt
 
 typedef struct			s_rtt
 {
-	float				tt;
+	t_elem				*list;
 	float				min;
-	float				avg;
 	float				max;
-	float				mdev;
+	float				avg;
+	float				tt;
+	float				ttsq;
 }						t_rtt;
+
+typedef struct			s_time
+{
+	struct timeval		snd_packet;
+	struct timeval		rec_packet;
+}						t_time;
+
+typedef struct			s_target
+{
+	char				*node;
+	struct sockaddr_in	to;
+	char				ipv4[16];
+	char				ip_ref[16];
+}						t_target;
+
+typedef struct			s_packet
+{
+	struct icmp			icmp;
+	char				b[28];
+}						t_packet;
 
 typedef struct			s_ping
 {
 	int					verbose;
-	char				*node;
 	int					do_ping;
 	int					sockfd;
-	struct sockaddr_in	to;
-	char				ipv4[16];
-	struct icmp			packet;
-	int					iseq;
 	int					spack;
 	int					rpack;
+	int					iseq;
+	t_target			to;
+	t_packet			packet;
 	t_rtt				rtt;
-	struct timeval		pstart;
-	struct timeval		pend;
+	t_time				t;
 }						t_ping;
 
 
-t_ping					g_ping;
+t_ping					_ping;
 
 int						ping(char *_host, t_opt opt);
-
+void					get_rtt(float time);
+void                    print_e_type(void);
+float                   get_e_type(void);
 #endif

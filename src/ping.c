@@ -1,9 +1,8 @@
 #include "ft_ping.h"
-#include <signal.h>
 
-static int					error(char *_emsg)
+static int					error(char *emsg)
 {
-	dprintf(2, "%s\n", _emsg);
+	dprintf(2, "%s\n", emsg);
 	return (-1);
 }
 
@@ -17,97 +16,112 @@ static struct addrinfo		init_hints(void)
 	return (hints);
 }
 
-static void					*get_target(struct addrinfo *_res)
+static void					*get_target(struct addrinfo *res)
 {
-	struct addrinfo			*_tmp;
-	struct sockaddr_in		*_ipv4;
+	struct addrinfo			*tmp;
+	struct sockaddr_in		*ipv4;
 
-	_tmp = _res;
-	while (_tmp)
+	tmp = res;
+	while (tmp)
 	{
-		if (_tmp->ai_family == AF_INET)
+		if (tmp->ai_family == AF_INET)
 		{
-			_ipv4 = (struct sockaddr_in *)_tmp->ai_addr;
-			return (&(_ipv4->sin_addr));
+			ipv4 = (struct sockaddr_in *)tmp->ai_addr;
+			return (&(ipv4->sin_addr));
 		}
-		_tmp = _tmp->ai_next;
+		tmp = tmp->ai_next;
 	}
 	return (NULL);
 }
 
-unsigned short eval_checksum(unsigned short *_data, int _size)
+unsigned short eval_checksum(unsigned short *data, int size)
 {
-	unsigned long _checksum = 0;
+	unsigned long checksum = 0;
 
-	while (_size > 1)
+	while (size > 1)
 	{
-		_checksum = _checksum+*_data++;
-		_size = _size - sizeof(unsigned short);
+		checksum = checksum+*data++;
+		size = size - sizeof(unsigned short);
 	}
+	if (size)
+		checksum = checksum + *(unsigned char *)data;
 
-	if (_size)
-		_checksum = _checksum + *(unsigned char *)_data;
+	checksum = (checksum >> 16) + (checksum & 0xffff);
+	checksum = checksum + (checksum >> 16);
 
-	_checksum = (_checksum >> 16) + (_checksum & 0xffff);
-	_checksum = _checksum + (_checksum >> 16);
-
-	return (unsigned short)(~_checksum);
+	return (unsigned short)(~checksum);
 }
 
 void						create_icmp_packet(void)
 {
-	g_ping.packet.icmp_type = ICMP_ECHO;
-	g_ping.packet.icmp_code = 0;
-	g_ping.packet.icmp_cksum = 0;
-	g_ping.packet.icmp_id = getpid();
-	g_ping.packet.icmp_seq = 0;
-	g_ping.packet.icmp_cksum = eval_checksum((unsigned short *)&g_ping.packet, sizeof(g_ping.packet));
-}
-
-
-struct buffer {
-	struct iphdr	ip;
-	struct icmphdr	icmp;
-};
-
-void						get_rtt(float time)
-{
-	g_ping.rtt.tt += time;
-	if (g_ping.rtt.min == 0.0)
-		g_ping.rtt.min = time;
-	if (g_ping.rtt.max == 0.0)
-		g_ping.rtt.max = time;
-	if (time < g_ping.rtt.min)
-		g_ping.rtt.min = time;
-	if (time > g_ping.rtt.max)
-		g_ping.rtt.max = time;
-	g_ping.rtt.avg = g_ping.rtt.tt / (float)g_ping.iseq;
+	static int seq = 1;
+	_ping.packet.icmp.icmp_type = ICMP_ECHO;
+	_ping.packet.icmp.icmp_code = 0;
+	_ping.packet.icmp.icmp_cksum = 0;
+	_ping.packet.icmp.icmp_id = getpid();
+	_ping.packet.icmp.icmp_seq = seq++;
+	_ping.packet.icmp.icmp_cksum = eval_checksum((unsigned short *)&_ping.packet, sizeof(_ping.packet));
 }
 
 void						sighandler(int sig)
 {
-	int		_status;
-	double	tend;
+	int		status;
 
 	if (sig == SIGALRM)
 	{
 		create_icmp_packet();
-		if ((_status = sendto(g_ping.sockfd, &g_ping.packet, sizeof(g_ping.packet), 0, (struct sockaddr *)&g_ping.to, sizeof(g_ping.to))) < 0)
+		if ((status = sendto(_ping.sockfd, &_ping.packet, sizeof(_ping.packet), 0, (struct sockaddr *)&_ping.to.to, sizeof(_ping.to.to))) < 0)
 		{
-			dprintf(2, "[\e[38;5;160m-\e[0m] sendto error.\n");
+			dprintf(2, "[\e[38;5;160m-] sendto error.\n");
 			return ;
 		}
 		alarm(1);
-		g_ping.spack++;
+		_ping.spack++;
+		_ping.iseq++;
 		struct timeval _before;
 		memset(&_before, 0, sizeof(_before));
-		gettimeofday(&_before, NULL);
+		gettimeofday(&_ping.t.snd_packet, NULL);
+	}
+	else if (sig == SIGINT)
+	{
+		int percent;
+		percent = (_ping.spack > 0 ) ? 100 - (_ping.rpack * 100 / _ping.spack) : 0;
+		_ping.do_ping = FALSE;
+		printf("\r--- %s ping statistics ---\n", _ping.to.node);
+		printf("%d packets transmitted, %d packets received, %d%% packet loss\n", _ping.spack, _ping.rpack, percent);
+		if (_ping.rpack > 0)
+			printf("\rround-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n", _ping.rtt.min, _ping.rtt.avg, _ping.rtt.max, get_e_type());
+		print_e_type();
+		exit(EXIT_SUCCESS);
+	}
+}
 
-		//printf("[\e[38;5;82m+\e[0m] Sendto success (%d bytes send).\n", _status);
-		//		char buffer[548];
-
+int							ping(char *_node, t_opt opt)
+{
+	int						_status;
+	struct addrinfo			_hints;
+	struct addrinfo			*_res;
+	void					*_src;
+	memset(&_ping, 0, sizeof(_ping));
+	_ping.do_ping = TRUE;
+	_ping.to.node = _node;
+	_hints = init_hints();
+	if ((_status = getaddrinfo(_node, 0, &_hints, &_res)) != 0)
+		return (error("[\e[38;5;160m-] Getaddrinfo failed."));
+	if (!(_src = get_target(_res)))
+		return (error("[\e[38;5;160m-] get_target failed."));
+	inet_ntop(AF_INET, _src, _ping.to.ipv4, sizeof(_ping.to.ipv4));
+	if ((_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
+		return (error("[\e[38;5;160m-] Socket error.\n"));
+	_ping.verbose = (opt.v) ? 1 : 0;
+	_ping.to.to.sin_family = AF_INET;
+	_ping.to.to.sin_addr.s_addr = inet_addr(_ping.to.ipv4);
+	printf("PING %s (%s) 56 bytes of data.\n", _node, _ping.to.ipv4);
+	signal(SIGALRM, sighandler);
+	signal(SIGINT, sighandler);
+	alarm(1);
+	while (_ping.do_ping) {
 		_status = 0;
-		//
 		struct buffer buffer;	
 		struct sockaddr_storage src_addr;
 
@@ -122,91 +136,28 @@ void						sighandler(int sig)
 		message.msg_iovlen=1;
 		message.msg_control=0;
 		message.msg_controllen=0;
-		if ((_status = recvmsg(g_ping.sockfd, &message, 0)) < 0)
-		{
-			// perror("recvmsg");
-			return ;
-		}
-		struct timeval _after;
-		memset(&_after, 0, sizeof(_after));
-		gettimeofday(&_after, NULL);
-
+		if ((_status = recvmsg(_ping.sockfd, &message, 0)) < 0)
+			return -1;
 		double time;
-
-		time = ((_after.tv_sec - _before.tv_sec) * 1000.0) + ((_after.tv_usec - _before.tv_usec) / 1000.0);
-		//printf("[\e[38;5;82m+\e[0m] recvmsg success (%d bytes receive).\n", _status);
-		g_ping.iseq++;
-		get_rtt(time);
-		g_ping.rpack++;
-		if (g_ping.verbose)
-			printf("From %s: icmp_seq=%d type: %d code: %d\n", g_ping.ipv4, g_ping.iseq, buffer.icmp.type, buffer.icmp.code);
-		else
+		if (buffer.icmp.icmp_type == ICMP_ECHOREPLY)
 		{
-			//if (time < 1.0)
-			//	printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
-			//else
-			printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, g_ping.ipv4, g_ping.iseq, buffer.ip.ttl, time);
+			if (buffer.icmp.icmp_id == getpid())
+			{
+				struct timeval _after;
+				memset(&_after, 0, sizeof(_after));
+				gettimeofday(&_ping.t.rec_packet, NULL);
+				time = ((_ping.t.rec_packet.tv_sec - _ping.t.snd_packet.tv_sec) * 1000.0) + ((_ping.t.rec_packet.tv_usec - _ping.t.snd_packet.tv_usec) / 1000.0);
+				get_rtt(time);
+				_ping.rpack++;
+				if (_ping.verbose)
+					printf("From %s: icmp_seq=%d type: %d code: %d\n", _ping.to.ipv4, (!_ping.iseq) ? 0 : _ping.iseq - 1, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
+				else
+					printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n", _status, _ping.to.ipv4, _ping.iseq, buffer.ip.ttl, time);
+			}
 		}
+		else if (buffer.icmp.icmp_type != ICMP_ECHO)
+			printf("From %s: icmp_seq=%d type: %d code: %d\n", _ping.to.ipv4, _ping.iseq - 1, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
 	}
-	else if (sig == SIGINT)
-	{
-		gettimeofday(&g_ping.pend, NULL);
-		tend = ((g_ping.pend.tv_sec - g_ping.pstart.tv_sec) * 1000.0) + ((g_ping.pend.tv_usec - g_ping.pstart.tv_usec) / 1000.0);
-		int percent;
-		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
-		g_ping.do_ping = FALSE;
-		printf("\r--- %s ping statistics ---\n", g_ping.node);
-		printf("%d packets transmitted, %d received, %d%% packet loss, time %dms\n", g_ping.spack, g_ping.rpack, percent, (int)tend);
-		if (g_ping.rpack > 0)
-			printf("\r%d/%d packets, %d%% loss, min/avg/max/mdev = %.3f/%.3f/%.3f/0.0 ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
-	}
-	else if (sig == SIGQUIT)
-	{
-		int percent;
-		percent = (g_ping.spack > 0 ) ? 100 - (g_ping.rpack * 100 / g_ping.spack) : 0;
-		if (g_ping.rpack > 0)
-			printf("\r%d/%d packets, %d%% loss, min/avg/ewma/max = %.3f/%.3f/0.0/%.3f ms\n", g_ping.rpack, g_ping.spack, percent, g_ping.rtt.min, g_ping.rtt.avg, g_ping.rtt.max);
-		else
-			printf("\r%d/%d packets, %d%% loss\n", g_ping.spack, g_ping.rpack, percent);
-	}
-}
-
-int							ping(char *_node, t_opt opt)
-{
-	int						_status;
-	struct addrinfo			_hints;
-	struct addrinfo			*_res;
-	void					*_src;
-	memset(&g_ping, 0, sizeof(g_ping));
-	gettimeofday(&g_ping.pstart, NULL);
-	g_ping.do_ping = TRUE;
-	g_ping.node = _node;
-	_hints = init_hints();
-	if ((_status = getaddrinfo(_node, 0, &_hints, &_res)) != 0)
-		return (error("[\e[38;5;160m-\e[0m] Getaddrinfo failed."));
-	//	printf("[\e[38;5;82m+\e[0m] Getaddrinfo success.\n");
-	if (!(_src = get_target(_res)))
-		return (error("[\e[38;5;160m-\e[0m] get_target failed."));
-	inet_ntop(AF_INET, _src, g_ping.ipv4, sizeof(g_ping.ipv4));
-	//	printf("target: %s -> %s\n", _node, g_ping.ipv4);
-	if ((g_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
-		return (error("[\e[38;5;160m-\e[0m] Socket error.\n"));
-	//	printf("[\e[38;5;82m+\e[0m] Socket success.\n");
-	g_ping.verbose = (opt.v) ? 1 : 0;
-	g_ping.to.sin_family = AF_INET;
-	g_ping.to.sin_addr.s_addr = inet_addr(g_ping.ipv4);
-	struct timeval tv;
-	tv.tv_sec = 1;
-	setsockopt(g_ping.sockfd, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
-// 	int ttl = 60; /* max = 255 */
-// setsockopt(g_ping.sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
-	printf("PING %s (%s) ?(?) bytes of data.\n", _node, g_ping.ipv4);
-	signal(SIGALRM, sighandler);
-	signal(SIGINT, sighandler);
-	signal(SIGQUIT, sighandler);
-	alarm(1);
-	while (g_ping.do_ping)
-		;
 	freeaddrinfo(_res);
 	return (0);
 }

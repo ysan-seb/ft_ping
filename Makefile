@@ -16,6 +16,7 @@ SRC_PATH = ./src/
 
 SRCS =	$(SRC_PATH)main.c \
 		$(SRC_PATH)ping.c \
+		$(SRC_PATH)time.c \
 
 OBJS =	$(SRCS:.c=.o)
 
@@ -35,7 +36,7 @@ lib	:
 	#@make -C libft/
 
 $(NAME):$(OBJS)
-	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) #$(LIBFT)
+	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) -lm #$(LIBFT)
 
 %.o: %.c ./inc/libft.h ./inc/libftprintf.h
 	gcc $(FLAGS) -o $@ -c  $< $(HEADER)
