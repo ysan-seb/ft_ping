@@ -14,7 +14,7 @@
 
 static int		usage(char *bin)
 {
-	dprintf(2, "Usage: %s [-hf] host\n", bin);
+	dprintf(2, "Usage: %s [-hv] host\n", bin);
 	return (1);
 }
 
@@ -71,13 +71,13 @@ int				main(int ac, char **av)
 		return (usage("ft_ping"));
 	if (getuid() != 0)
 	{
-		printf("ft_ping: permission denied\n");
+		printf("ft_ping: Permission denied\n");
 		return (0);
 	}
 	ft_memset(&opt, 0, sizeof(opt));
 	if (!(av = get_options(av, &opt)))
 		return (1);
-	if (!strlen(av[0]) || av[1] || opt.h)
+	if (!av[0] || !strlen(av[0]) || av[1] || opt.h)
 		return (usage("ft_ping"));
 	if (ping(av[0], opt) < 0)
 		return (-1);

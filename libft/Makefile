@@ -128,7 +128,7 @@ $(NAME): $(OBJ)
 	@ar rc $(NAME) $(OBJ)
 	@ranlib $(NAME)
 
-%.o: %.c libft.h
+%.o: %.c libft.h libftprintf.h
 	gcc -c -Wall -Wextra -Werror -o $@ -c $< -I./includes 
 
 clean:

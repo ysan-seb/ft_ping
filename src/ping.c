@@ -56,9 +56,16 @@ void						ping_exit(void)
 	printf("%d packets transmitted, %d packets received, %d%% packet loss\n",
 			_ping.spack, _ping.rpack, percent);
 	if (_ping.rpack > 0)
+	{
 		printf("\rround-trip min/avg/max/stddev = %.3f/%.3f/%.3f/%.3f ms\n",
 				_ping.rtt.min, _ping.rtt.avg, _ping.rtt.max, get_e_type());
-	exit(EXIT_SUCCESS);
+		free_e_type();
+	}
+	if (!_ping.rpack)
+		exit(1);
+	if (_ping.err)
+		exit(2);
+	exit(0);
 }
 
 void						sighandler(int sig)
@@ -80,22 +87,28 @@ int							ping(char *node, t_opt opt)
 	struct in_addr			*addr;
 	void					*src;
 
+	status = 0;
 	ft_memset(&_ping, 0, sizeof(_ping));
 	_ping.do_ping = TRUE;
 	_ping.to.node = node;
 	hints = init_hints();
 	if ((status = getaddrinfo(node, 0, &hints, &res)) != 0)
-		return (error("[\e[38;5;160m-] Getaddrinfo failed."));
+	{
+		if (status == -2 || status == -5)
+			return (error("ft_ping: unknown host"));
+		else
+			return (error("[\e[38;5;160m-\e[0m] Getaddrinfo failed."));
+	}
 	if (!(src = get_target(res)))
-		return (error("[\e[38;5;160m-] get_target failed."));
+		return (error("[\e[38;5;160m-\e[0m] get_target failed."));
 	addr = src;
 	inet_ntop(AF_INET, src, _ping.to.ipv4, sizeof(_ping.to.ipv4));
 	if ((_ping.sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
-		return (error("[\e[38;5;160m-] Socket error.\n"));
+		return (error("[\e[38;5;160m-\e[0m] Socket error.\n"));
 	_ping.verbose = (opt.v) ? 1 : 0;
 	_ping.to.to.sin_family = AF_INET;
 	_ping.to.to.sin_addr.s_addr = addr->s_addr;
-	printf("PING %s (%s) 56 bytes of data.\n", node, _ping.to.ipv4);
+	printf("PING %s (%s) 56 data bytes\n", node, _ping.to.ipv4);
 	signal(SIGALRM, sighandler);
 	signal(SIGINT, sighandler);
 	alarm(1);

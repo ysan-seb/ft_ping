@@ -83,6 +83,7 @@ typedef struct			s_ping
 	int					spack;
 	int					rpack;
 	int					iseq;
+	int					err;
 	t_target			to;
 	t_packet			packet;
 	t_rtt				rtt;
@@ -97,5 +98,6 @@ void					print_e_type(void);
 float					get_e_type(void);
 int						send_packet(void);
 int						recv_packet(void);
+void					free_e_type(void);
 
 #endif

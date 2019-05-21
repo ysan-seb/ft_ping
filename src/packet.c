@@ -12,6 +12,27 @@
 
 #include "ft_ping.h"
 
+void						err_type(int type)
+{
+	static char *emsg[] = {
+		[ICMP_DEST_UNREACH] = "Destination Unreachable",
+		[ICMP_SOURCE_QUENCH] = "Source Quench",
+		[ICMP_REDIRECT] = "Redirect (change route)",
+		[ICMP_ECHO] = "Echo Request",
+		[ICMP_TIME_EXCEEDED] = "Time Exceeded",
+		[ICMP_PARAMETERPROB] = "Parameter Problem",
+		[ICMP_TIMESTAMP] = "Timestamp Request",
+		[ICMP_TIMESTAMPREPLY] = "Timestamp Reply",
+		[ICMP_INFO_REQUEST] = "Information Request",
+		[ICMP_INFO_REPLY] = "Information Reply",
+		[ICMP_ADDRESS] = "Address Mask Request",
+		[ICMP_ADDRESSREPLY] = "Address Mask Reply",
+	};
+
+	_ping.err++;
+	printf(" %s\n", emsg[type]);
+}
+
 unsigned short				eval_checksum(unsigned short *data, int size)
 {
 	unsigned long checksum;
@@ -49,8 +70,8 @@ int							send_packet(void)
 	if ((status = sendto(_ping.sockfd, &_ping.packet, sizeof(_ping.packet),
 					0, (struct sockaddr *)&_ping.to.to, sizeof(_ping.to.to))) < 0)
 	{
-		dprintf(2, "[\e[38;5;160m-] sendto error.\n");
-		return (-1);
+		dprintf(2, "ft_ping: sending packet: Invalid argument\n");
+		exit(1);
 	}
 	alarm(1);
 	_ping.spack++;
@@ -73,8 +94,8 @@ int							print_packet(t_buffer buffer, int status)
 	get_rtt(time);
 	_ping.rpack++;
 	if (_ping.verbose)
-		printf("From %s: icmp_seq=%d type: %d code: %d\n",
-				_ping.to.ipv4, (!_ping.iseq) ? 0 : _ping.iseq - 1, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
+		printf("From %s: type: %d code: %d\n",
+				_ping.to.ipv4, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
 	else
 		printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.3f ms\n",
 				status, _ping.to.ipv4, _ping.iseq, buffer.ip.ttl, time);
@@ -107,7 +128,20 @@ int							recv_packet(void)
 				return (-1);
 	}
 	else if (buffer.icmp.icmp_type != ICMP_ECHO)
-		printf("From %s: icmp_seq=%d type: %d code: %d\n",
-				_ping.to.ipv4, _ping.iseq - 1, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
+	{
+		if (buffer.icmp.icmp_type >= 3 && buffer.icmp.icmp_type <= 18)
+		{
+			if (_ping.verbose)
+				print_packet(buffer, status);
+			else
+			{
+				printf("From %s:", _ping.to.ipv4);
+				err_type(buffer.icmp.icmp_type);	
+			}
+		}
+		else
+			printf("From %s: type: %d code: %d\n",
+				_ping.to.ipv4, buffer.icmp.icmp_type, buffer.icmp.icmp_code);
+	}
 	return (0);
 }

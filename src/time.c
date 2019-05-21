@@ -17,7 +17,7 @@ t_elem							*add_elem(float time)
 	t_elem	*elem;
 
 	if (!(elem = (t_elem*)malloc(sizeof(t_elem))))
-		return (NULL);
+		exit (2);
 	elem->time = time;
 	elem->next = NULL;
 	return (elem);
