@@ -16,6 +16,7 @@ SRC_PATH = ./src/
 
 SRCS =	$(SRC_PATH)main.c \
 		$(SRC_PATH)ping.c \
+		$(SRC_PATH)packet.c \
 		$(SRC_PATH)time.c \
 
 OBJS =	$(SRCS:.c=.o)
@@ -26,27 +27,27 @@ FLAGS = -g3 -fsanitize=address -Wall -Wextra -Werror
 
 HEADER = -I./inc
 
-#LIBFT = libft/libft.a
+LIBFT = libft/libft.a
 
 RM = rm -rf
 
 all	: lib $(NAME)
 
 lib	:
-	#@make -C libft/
+	@make -C libft/
 
 $(NAME):$(OBJS)
-	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) -lm #$(LIBFT)
+	$(CC) $(FLAGS) -o $(NAME) $(OBJS) $(HEADER) $(LIBFT)
 
-%.o: %.c ./inc/libft.h ./inc/libftprintf.h
+%.o: %.c ./inc/ft_ping.h ./inc/libft.h ./inc/libftprintf.h
 	gcc $(FLAGS) -o $@ -c  $< $(HEADER)
 
 clean	:
-	#@make -C libft/ clean
+	@make -C libft/ clean
 	$(RM) $(OBJS)
 
 fclean: clean
-	#@make -C libft/ fclean
+	@make -C libft/ fclean
 	$(RM) $(NAME)
 
 re	:	fclean

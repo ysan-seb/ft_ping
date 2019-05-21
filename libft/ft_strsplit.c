@@ -76,13 +76,11 @@ static char		**do_split(int i, char const *s, char c, char **str)
 char			**ft_strsplit(char const *s, char c)
 {
 	int			i;
-	int			j;
 	char		**str;
 	int			nbwords;
 	char		*str2;
 
 	i = 0;
-	j = 0;
 	if (c && s)
 	{
 		nbwords = ft_countwords(s, c);

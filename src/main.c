@@ -74,7 +74,7 @@ int				main(int ac, char **av)
 		printf("ft_ping: permission denied\n");
 		return (0);
 	}
-	memset(&opt, 0, sizeof(opt));
+	ft_memset(&opt, 0, sizeof(opt));
 	if (!(av = get_options(av, &opt)))
 		return (1);
 	if (!strlen(av[0]) || av[1] || opt.h)

@@ -6,7 +6,7 @@
 /*   By: maki <maki@student.42.fr>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/05/01 17:09:39 by ysan-seb          #+#    #+#             */
-/*   Updated: 2019/05/19 22:52:29 by maki             ###   ########.fr       */
+/*   Updated: 2019/05/21 17:02:57 by ysan-seb         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,17 +22,16 @@
 # include <netinet/ip_icmp.h>
 # include <netdb.h>
 # include <sys/time.h>
-#include <signal.h>
+# include <signal.h>
 
 # define FALSE	0
 # define TRUE	1
 
-struct buffer {
-	struct iphdr	ip;
-	struct icmp		icmp;
-	char			b[16];
-
-};
+typedef struct			s_buffer {
+	struct iphdr		ip;
+	struct icmp			icmp;
+	char				b[16];
+}						t_buffer;
 
 typedef struct			s_elem
 {
@@ -90,11 +89,13 @@ typedef struct			s_ping
 	t_time				t;
 }						t_ping;
 
-
 t_ping					_ping;
 
 int						ping(char *_host, t_opt opt);
 void					get_rtt(float time);
-void                    print_e_type(void);
-float                   get_e_type(void);
+void					print_e_type(void);
+float					get_e_type(void);
+int						send_packet(void);
+int						recv_packet(void);
+
 #endif

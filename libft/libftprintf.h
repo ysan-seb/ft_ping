@@ -17,6 +17,7 @@
 # include <unistd.h>
 # include <stdlib.h>
 # include <stdio.h>
+# include <inttypes.h>
 
 typedef struct		s_env
 {
